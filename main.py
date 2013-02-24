@@ -56,17 +56,38 @@ code = [[["sin",None], ["5",None]],[["cos",None],["12",None]]]
 cursorx = 0
 wordx = 0
 wordy = 0
-dictionary = [["thing",None], ["is a kind of",None], ["isaac newton",None], ["banana",None]]
-#todo: synonyma, struktury
+#dictionary = [["thing",None], ["is a kind of",None], ["isaac newton",None], ["banana",None]]
+hardcoded = [[a,a] for a in ["thing","is a kind of","is"]]
+hardcoded +=[["a", "particle"],["an","particle"]]
+dictionary = hardcoded
+#todo: synonyma, struktury, #word
 menu = []
 menu_sel = 0
 
 
 
+patterns={"kind declaration": ["something new", "is a kind of", "kind"],
+"object declaration": ["something new", "is", "particle", "kind"]}
+#command, print, expression
 
+def matches(code, pattern):
+#	print "matching ",code," with ",pattern
+	counter = 0
+	for i in pattern:
+		if code[counter][1] <> i:
+			return False
+		counter += 1
+	return True
 
-
-
+def update_dictionary():
+	global dictionary
+	dictionary = hardcoded
+	for line in code:
+		if matches(line, patterns["kind declaration"]):
+			dictionary.append([line[0][0], "kind"])
+		if matches(line, patterns["object declaration"]):
+			dictionary.append([line[0][0], line[3][0]])
+	print "dictionary is ", dictionary
 
 def update_menu():
 	global menu
@@ -80,14 +101,16 @@ def update_menu():
 def update_menu_sel():
 	global menu_sel
 	menu_sel = -1
-	if len(menu) == 1:
-		if menu[0][0] == get_text():
-			menu_sel = 0
+	counter = 0
+	for i in menu:
+		if i[0] == get_text():
+			menu_sel = counter
+		counter += 1 
 
 
 def set_meaning(x):
 	code[wordy][wordx][1] = x
-	print "meaning set to ", x
+	print "meaning set to", x
 
 
 
@@ -243,56 +266,56 @@ def control(event):
 	# up & down
 	if event.key == pygame.K_DOWN:
 		movedown()
-	if event.key == pygame.K_UP:
+	elif event.key == pygame.K_UP:
 		moveup()
 
 	# pg up & down
-	if event.key == pygame.K_PAGEDOWN:
+	elif event.key == pygame.K_PAGEDOWN:
 		menu_sel +=1
-	if event.key == pygame.K_PAGEUP:
+	elif event.key == pygame.K_PAGEUP:
 		menu_sel -=1
 
 	# left & right
-	if event.key == pygame.K_LEFT:
+	elif event.key == pygame.K_LEFT:
 		moveleft()
-	if event.key == pygame.K_RIGHT:
+	elif event.key == pygame.K_RIGHT:
 		moveright()
 
 
 
 
-	if event.key == pygame.K_HOME:
+	elif event.key == pygame.K_HOME:
 		cursorx = 0
 		wordx = 0
-	if event.key == pygame.K_END:
+	elif event.key == pygame.K_END:
 		wordx = -1+len(code[wordy][0])
 		cursorx = len(get_text())
 
 
 
-	if event.key == pygame.K_F8:
+	elif event.key == pygame.K_F8:
 	        del code[wordy]
 
 
 
-	if event.scancode == 151 or event.key == pygame.K_F12:
+	elif event.scancode == 151 or event.key == pygame.K_F12:
 	        #exit
 #		save()
 		bye()
-	if event.key == pygame.K_F10:
+	elif event.key == pygame.K_F10:
  		bye()
 
-	print "scancode ", event.scancode
+#	print "scancode ", event.scancode
 	
-	if event.unicode == ' ':
-		if len(menu) == 1:
-			if menu_sel == 0:
-				set_meaning(menu[0][1])
-				
+	elif event.unicode == ' ':
+		if menu_sel <> -1:
+			set_meaning(menu[menu_sel][1])
+		moveright()
+	
+	else: return False			
 
 	update_menu()
-
-
+	return True
 
 
 def edit(event):
@@ -313,6 +336,7 @@ def edit(event):
 	else:
 		return
 
+	update_dictionary()
 	update_menu()
 	update_menu_sel()
 
