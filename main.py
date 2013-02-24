@@ -26,7 +26,7 @@ screen_height = 480
 
 
 pygame.init()
-pygame.display.set_caption("777")
+pygame.display.set_caption("secret-banana")
 pygame.key.set_repeat(300,30)
 screen_surface = pygame.display.set_mode((640,screen_height))
 
@@ -87,13 +87,13 @@ def update_dictionary():
 			dictionary.append([line[0][0], "kind"])
 		if matches(line, patterns["object declaration"]):
 			dictionary.append([line[0][0], line[3][0]])
-	print "dictionary is ", dictionary
+#	print "dictionary is ", dictionary
 
 def update_menu():
 	global menu
 #	make a list of all dictionary words beginning with the edited word
 	menu = [i for i in dictionary if get_text() in i[0]]
-	print "todays menu:", menu
+#	print "todays menu:", menu
 
 
 
@@ -107,12 +107,18 @@ def update_menu_sel():
 			menu_sel = counter
 		counter += 1 
 
+def menu_choice():
+	set_meaning(menu[menu_sel][1])
+	set_text(menu[menu_sel][0])
+
+
+
+def initiate_new_word():
+	menu_sel = 0
 
 def set_meaning(x):
 	code[wordy][wordx][1] = x
 	print "meaning set to", x
-
-
 
 def set_text(w):
 	global code
@@ -121,41 +127,60 @@ def set_text(w):
 def get_text():
 	return code[wordy][wordx][0]
 
-def snapwordx():
-	global wordx
-	wordx = min(len(code[wordy]), wordx)
-	if len(code[wordy]) == wordx:
-		code[wordy].insert(0, ["",None])
 
+
+
+
+
+
+
+
+
+
+
+#moving about
+
+def stretch_line():
+	if len(code[wordy]) == wordx:
+		code[wordy].append(["",None])
+
+def snap_to_line():
+	#if number_of_letters_on_line(wordy) < number_of_letters_on_previous_line...
+	global wordx, cursorx
+	#if wordx > len(code[wordy])
+	wordx = min(len(code[wordy]), wordx)
+	#
+	cursorx=wordx=0
 
 def moveup():
-	global wordy, code, wordx
-	if wordy == 0:
-		code = [] + code
-		print "wut"
-	else:
+	global wordy
+	if wordy <> 0:
 		wordy-=1
-	snapwordx()
+	snap_to_line()
 
 def movedown():
 	global wordy, code, wordx
 	wordy+=1
 	if wordy >= len(code):
 		code.append([])
-	snapwordx()		
+	#k
+	snap_to_line()		
+	stretch_line()
+
 
 def moveright():
 	global cursorx
-	if cursorx < len(code[wordy][wordx]):
+	if cursorx < len(code[wordy][wordx][0]):
+		print "cursorx += 1"
 		cursorx += 1
 	else:
 		wordright()
 def wordright():
 	global wordx, code, cursorx
+#	print "wordright"
 	wordx += 1
-	if wordx >= len(code[wordy]):
-		code[wordy].append("")
 	cursorx = 0
+	stretch_line()
 
 def moveleft():
 	global cursorx
@@ -168,16 +193,7 @@ def wordleft():
 	global wordx, cursorx
 	if wordx > 0:
 		wordx -= 1
-		cursorx = len(code[wordy][wordx])
-
-
-
-
-
-
-
-def initiate_new_word():
-	menu_sel = 0
+		cursorx = len(code[wordy][wordx][0])
 
 
 
@@ -190,6 +206,9 @@ def initiate_new_word():
 
 
 
+
+
+#drawing
 
 def getletters():
 	letters = 0
@@ -202,29 +221,44 @@ def getletters():
 
 def draw():
 	screen_surface.fill((0,0,0))
-
+	lines_for_each_line = 3
 #text
 	y = 0
 	wy = 0
 	for l in code:
-		x = 0
+		x = left_margin
 		wx = 0
 		for w in l:
-			if (wx == wordx) and (wy == wordy):
-				to_blit=font.render(w[0],True,(255,255,255))
+			
+			#draw a debug rectangle around the word
+			pygame.draw.rect(screen_surface, (0,0,200), (x,y,len(w[0])*fontw, fonth), 2)
+
+			#draw word text
+			if w[0] == "":
+				to_blit_get_width = 0
 			else:
-				to_blit=font.render(w[0],True,(122,255,122))
-			screen_surface.blit(to_blit,(left_margin+x, y))
-			x = x + to_blit.get_width() + 10
+				if (wx == wordx) and (wy == wordy):
+					color = (255,255,255)
+				else:
+					color = (122,255,122)
+				to_blit=font.render(w[0],True,color)
+				screen_surface.blit(to_blit,(x, y))
+				to_blit_get_width = to_blit.get_width()
+
+			#draw meaning under it
+			to_blit=font.render(w[1],True,(0,0,200))
+			screen_surface.blit(to_blit,(x, y+fonth))
+		
+			x = x + to_blit_get_width + fontw
 			wx += 1
-		y += fonth
+		y += fonth*lines_for_each_line
 		wy += 1
 
 #cursor
 	letters = getletters() + cursorx
 	#print "cursorx is ",cursorx,", drawing cursor at ",letters," letters"	
-	startpos = (left_margin+(letters*fontw), wordy*fonth)
-	endpos   = (left_margin+(letters*fontw), (wordy+1)*fonth)
+	startpos = (left_margin+(letters*fontw), wordy*lines_for_each_line*fonth)
+	endpos   = (left_margin+(letters*fontw), (wordy*lines_for_each_line+1)*fonth)
 	pygame.draw.aaline(screen_surface, (200, 200, 0), startpos, endpos,3)
 
 #menu
@@ -237,7 +271,7 @@ def draw():
 		else:
 			color = (200,0,0)
 		to_blit=font.render(i[0],True,color)
-		y = (wordy+counter+1) * fonth
+		y = (wordy*lines_for_each_line+counter+1) * fonth
 		x = left_margin + letters * fontw
 		screen_surface.blit(to_blit,(x, y))
 		counter += 1
@@ -256,11 +290,11 @@ def draw():
 
 
 
-
+#key input
 
 
 def control(event):
-	global menu_sel,cursorx,code, wordx
+	global menu_sel,cursorx,code, wordx,wordy
 
 
 	# up & down
@@ -288,7 +322,7 @@ def control(event):
 		cursorx = 0
 		wordx = 0
 	elif event.key == pygame.K_END:
-		wordx = -1+len(code[wordy][0])
+		wordx = -1+len(code[wordy])
 		cursorx = len(get_text())
 
 
@@ -309,8 +343,18 @@ def control(event):
 	
 	elif event.unicode == ' ':
 		if menu_sel <> -1:
-			set_meaning(menu[menu_sel][1])
-		moveright()
+			menu_choice()
+			menu_sel = -1
+		wordright()
+
+	elif event.key == pygame.K_RETURN:
+		wordy+=1
+		wordx=0
+		cursorx=0
+		code.insert(wordy, [])
+		snap_to_line()
+		stretch_line()
+
 	
 	else: return False			
 
@@ -322,11 +366,21 @@ def edit(event):
 	global cursorx
 	if event.key==pygame.K_BACKSPACE:
 		print "backspace"
-		if cursorx > 0 and cursorx <= len(get_text()):
-			newtext = get_text()[0:cursorx-1]+get_text()[cursorx:]
-			#print get_text(), "->", newtext
-			set_text(newtext)
-			cursorx -=1
+		if cursorx > 0:
+			if cursorx <= len(get_text()):
+				newtext = get_text()[0:cursorx-1]+get_text()[cursorx:]
+				#print get_text(), "->", newtext
+				set_text(newtext)
+				cursorx -=1
+		else:
+			if wordx > 0:
+				#print ">0"
+				#print code[wordy][wordx-1]
+				if code[wordy][wordx]==["",None]:
+					#print "del"
+					del code[wordy][wordx]
+					moveleft()
+
 	elif event.key==pygame.K_DELETE:
 		if cursorx >= 0 and cursorx < len(get_text()):
 			set_text(get_text()[0:cursorx]+get_text()[cursorx+1:])
@@ -366,6 +420,11 @@ def loop():
 update_menu()
 
 
+
+
+
+
+pygame.time.set_timer(pygame.USEREVENT, 40)#SIGINT timer
 
 
 
