@@ -17,7 +17,7 @@ from pygame import gfxdraw
 
 
 left_margin = 10
-screen_height = 600
+screen_height = 480
 
 
 
@@ -28,7 +28,7 @@ screen_height = 600
 pygame.init()
 pygame.display.set_caption("777")
 pygame.key.set_repeat(300,30)
-screen_surface = pygame.display.set_mode((1000,screen_height))
+screen_surface = pygame.display.set_mode((640,screen_height))
 
 
 
@@ -51,12 +51,13 @@ left_margin = 12
 
 
 
-code = [["sin", "5"],["cos","12"]]
+
+code = [[["sin",None], ["5",None]],[["cos",None],["12",None]]]
 cursorx = 0
 wordx = 0
 wordy = 0
-dictionary = ["thing", "is a kind of"]
-#todo: synonyma
+dictionary = [["thing",None], ["is a kind of",None], ["isaac newton",None], ["banana",None]]
+#todo: synonyma, struktury
 menu = []
 menu_sel = 0
 
@@ -66,25 +67,49 @@ menu_sel = 0
 
 
 
-def settext(w):
-	global code
-	code[wordy][wordx] = w
 
-def gettext():
-	return code[wordy][wordx]
+def update_menu():
+	global menu
+#	make a list of all dictionary words beginning with the edited word
+	menu = [i for i in dictionary if get_text() in i[0]]
+	print "todays menu:", menu
+
+
+
+
+def update_menu_sel():
+	global menu_sel
+	menu_sel = -1
+	if len(menu) == 1:
+		if menu[0][0] == get_text():
+			menu_sel = 0
+
+
+def set_meaning(x):
+	code[wordy][wordx][1] = x
+	print "meaning set to ", x
+
+
+
+def set_text(w):
+	global code
+	code[wordy][wordx][0] = w
+
+def get_text():
+	return code[wordy][wordx][0]
 
 def snapwordx():
 	global wordx
 	wordx = min(len(code[wordy]), wordx)
 	if len(code[wordy]) == wordx:
-		code[wordy].insert(0, "")
-		#http://mail.python.org/pipermail/tutor/2005-March/036803.html
+		code[wordy].insert(0, ["",None])
 
 
 def moveup():
 	global wordy, code, wordx
 	if wordy == 0:
 		code = [] + code
+		print "wut"
 	else:
 		wordy-=1
 	snapwordx()
@@ -138,17 +163,16 @@ def initiate_new_word():
 
 
 
-def update_menu():
-
-#	make a list of all dictionary words beginning with the edited word
-	menu = [w for w in dictionary if word in w]
-	print "todays menu:", menu
 
 
 
 
 
-
+def getletters():
+	letters = 0
+	for i in range(0, wordx):
+		letters += len(code[wordy][i][0])+1
+	return letters
 
 
 
@@ -156,6 +180,7 @@ def update_menu():
 def draw():
 	screen_surface.fill((0,0,0))
 
+#text
 	y = 0
 	wy = 0
 	for l in code:
@@ -163,24 +188,39 @@ def draw():
 		wx = 0
 		for w in l:
 			if (wx == wordx) and (wy == wordy):
-				to_blit=font.render(w,True,(255,255,255))
+				to_blit=font.render(w[0],True,(255,255,255))
 			else:
-				to_blit=font.render(w,True,(122,255,122))
+				to_blit=font.render(w[0],True,(122,255,122))
 			screen_surface.blit(to_blit,(left_margin+x, y))
 			x = x + to_blit.get_width() + 10
 			wx += 1
 		y += fonth
 		wy += 1
 
-	letters = 0
-	for i in range(0, wordx):
-		letters += len(code[wordy][i])+1
-	letters += cursorx
-	print "cursorx is ",cursorx,", drawing cursor at ",letters," letters"	
-
+#cursor
+	letters = getletters() + cursorx
+	#print "cursorx is ",cursorx,", drawing cursor at ",letters," letters"	
 	startpos = (left_margin+(letters*fontw), wordy*fonth)
 	endpos   = (left_margin+(letters*fontw), (wordy+1)*fonth)
 	pygame.draw.aaline(screen_surface, (200, 200, 0), startpos, endpos,3)
+
+#menu
+	letters = getletters()
+	#wordy * fonth is the y position of the current word
+	counter = 0
+	for i in menu:
+		if counter == menu_sel:
+			color = (255,0,0)
+		else:
+			color = (200,0,0)
+		to_blit=font.render(i[0],True,color)
+		y = (wordy+counter+1) * fonth
+		x = left_margin + letters * fontw
+		screen_surface.blit(to_blit,(x, y))
+		counter += 1
+
+
+
 
 
 	pygame.display.update()
@@ -225,8 +265,8 @@ def control(event):
 		cursorx = 0
 		wordx = 0
 	if event.key == pygame.K_END:
-		wordx = -1+len(code[wordy])
-		cursorx = len(gettext())
+		wordx = -1+len(code[wordy][0])
+		cursorx = len(get_text())
 
 
 
@@ -241,10 +281,16 @@ def control(event):
 		bye()
 	if event.key == pygame.K_F10:
  		bye()
-	if event.scancode == 37:#run?
-		pass
 
+	print "scancode ", event.scancode
+	
+	if event.unicode == ' ':
+		if len(menu) == 1:
+			if menu_sel == 0:
+				set_meaning(menu[0][1])
+				
 
+	update_menu()
 
 
 
@@ -252,18 +298,23 @@ def control(event):
 def edit(event):
 	global cursorx
 	if event.key==pygame.K_BACKSPACE:
-		if cursorx > 0 and cursorx <= len(gettext()):
-			settext(gettext()[0:cursorx-1]+gettext()[cursorx:])
+		print "backspace"
+		if cursorx > 0 and cursorx <= len(get_text()):
+			newtext = get_text()[0:cursorx-1]+get_text()[cursorx:]
+			#print get_text(), "->", newtext
+			set_text(newtext)
 			cursorx -=1
 	elif event.key==pygame.K_DELETE:
-		if cursorx >= 0 and cursorx < len(gettext()):
-			settext(gettext()[0:cursorx]+gettext()[cursorx+1:])
-	if event.unicode:
-		settext(gettext()[0:cursorx]+event.unicode+gettext()[cursorx:])
+		if cursorx >= 0 and cursorx < len(get_text()):
+			set_text(get_text()[0:cursorx]+get_text()[cursorx+1:])
+	elif event.unicode:
+		set_text(get_text()[0:cursorx]+event.unicode+get_text()[cursorx:])
 		cursorx +=1
+	else:
+		return
 
-
-
+	update_menu()
+	update_menu_sel()
 
 
 
@@ -282,6 +333,22 @@ def loop():
 	draw()
 
 
+
+
+
+
+
+
+update_menu()
+
+
+
+
+
+
+
+
+
 while 1:
 	try:
 		loop()
@@ -293,3 +360,23 @@ while 1:
 
 
 
+
+
+
+
+
+
+
+
+
+
+"""
+todo:
+
+pixel position of wordy is wordy * fonth
+
+on drawing:
+	draw menu:
+		from pixel y of wordy down:
+
+"""			
