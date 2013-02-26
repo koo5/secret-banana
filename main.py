@@ -3,19 +3,20 @@
 
 
 
-
+#hello and welcome
 
 
 
 import os, sys
 import pygame
 from pygame import gfxdraw
+import simplejson
 
 
 
 
 
-
+#margin between displayed text and left edge of the window
 left_margin = 10
 screen_height = 480
 
@@ -25,10 +26,29 @@ screen_height = 480
 
 
 
-pygame.init()
-pygame.display.set_caption("secret-banana")
-pygame.key.set_repeat(300,30)
-screen_surface = pygame.display.set_mode((640,screen_height))
+def init_window():
+	pygame.init()
+	pygame.display.set_caption("secret-banana")
+	#sdl, which pygame is based on, has its own keyboard delay and repeat rate
+	pygame.key.set_repeat(300,30)
+	#this creates a window
+	return pygame.display.set_mode((640,screen_height))
+
+screen_surface = init_window()
+
+
+
+
+
+def init_font():
+	#the final version is planned to use comic sans ✈
+	font = pygame.font.SysFont('monospace', 16)
+	f= font.render(" ",False,(0,0,0)).get_rect()
+	fonth = f.height
+	fontw = f.width
+	return font, fontw, fonth
+
+(font, fontw, fonth) = init_font()
 
 
 
@@ -37,63 +57,80 @@ screen_surface = pygame.display.set_mode((640,screen_height))
 
 
 
-font = pygame.font.SysFont('monospace', 16)
-f= font.render(" ",False,(0,0,0)).get_rect()
-fonth = f.height
-fontw = f.width
-screenlines = screen_height / fonth
-f=None
-left_margin = 12
+try:
+	code = simplejson.loads(open("code.json", "r").read())
+except:
+	code = [[["ring ring ring ring ring ring ring BANANAPHONE!","nonsense"]]]
 
 
 
 
 
-
-
-
-code = [[["sin",None], ["5",None]],[["cos",None],["12",None]]]
 cursorx = 0
 wordx = 0
 wordy = 0
-#dictionary = [["thing",None], ["is a kind of",None], ["isaac newton",None], ["banana",None]]
-hardcoded = [[a,a] for a in ["thing","is a kind of","is"]]
-hardcoded +=[["a", "particle"],["an","particle"]]
-dictionary = hardcoded
-#todo: synonyma, struktury, #word
+
+
 menu = []
 menu_sel = 0
 
 
+#hardcoded -> dictionary -> menu
 
-patterns={"kind declaration": ["something new", "is a kind of", "kind"],
-"object declaration": ["something new", "is", "particle", "kind"]}
+#the static part of the menu, more stuff gets added by parsing the program
+hardcoded = [[a,a] for a in ["is a kind of","is"]]
+hardcoded +=[["a", "particle"],["an","particle"],["thing","kind"]]
+
+#program interpreter environment
+environment = {
+	"rules": {	"program begins": [],
+			"program ends": []
+	}
+}
+
+hardcoded += [["when", "when"]]+ [[i,"rule"] for i,j in environment["rules"].items()]
+
+print "dict is", hardcoded
+dictionary = hardcoded[:]
+
+patterns={
+"kind declaration": ["something new", "is a kind of", "kind"],
+"object declaration": ["something new", "is", "particle", "kind"],
+"rule": ["when", "rule", 
+}
+
 #command, print, expression
 
+
 def matches(code, pattern):
-#	print "matching ",code," with ",pattern
-	counter = 0
-	for i in pattern:
+	if len(code) <> len(pattern):
+		return False
+	print "matching ",code," with ",pattern
+	for counter, i in enumerate(pattern):
 		if code[counter][1] <> i:
 			return False
-		counter += 1
+	print "yep"
 	return True
 
-def update_dictionary():
-	global dictionary
-	dictionary = hardcoded
+def parse():
 	for line in code:
 		if matches(line, patterns["kind declaration"]):
 			dictionary.append([line[0][0], "kind"])
 		if matches(line, patterns["object declaration"]):
 			dictionary.append([line[0][0], line[3][0]])
-#	print "dictionary is ", dictionary
+
+
+def update_dictionary():
+	global dictionary
+	dictionary = hardcoded[:]
+	parse()
+	print "dictionary is ", dictionary
 
 def update_menu():
 	global menu
 #	make a list of all dictionary words beginning with the edited word
 	menu = [i for i in dictionary if get_text() in i[0]]
-#	print "todays menu:", menu
+	print "todays menu:", menu
 
 
 
@@ -110,6 +147,22 @@ def update_menu_sel():
 def menu_choice():
 	set_meaning(menu[menu_sel][1])
 	set_text(menu[menu_sel][0])
+
+def change_the_past():
+	for (i,j) in dictionary:
+		
+		pass
+
+
+
+def confirm_choice():
+	global menu_sel
+	if menu_sel <> -1:
+		menu_choice()
+		menu_sel = -1
+	else:
+		set_meaning("something new")
+	change_the_past()
 
 
 
@@ -228,7 +281,7 @@ def draw():
 	for l in code:
 		x = left_margin
 		wx = 0
-		for w in l:
+		for wx,w in enumerate(l):
 			
 			#draw a debug rectangle around the word
 			pygame.draw.rect(screen_surface, (0,0,200), (x,y,len(w[0])*fontw, fonth), 2)
@@ -250,7 +303,6 @@ def draw():
 			screen_surface.blit(to_blit,(x, y+fonth))
 		
 			x = x + to_blit_get_width + fontw
-			wx += 1
 		y += fonth*lines_for_each_line
 		wy += 1
 
@@ -281,7 +333,6 @@ def draw():
 
 
 	pygame.display.update()
-
 
 
 
@@ -342,12 +393,11 @@ def control(event):
 #	print "scancode ", event.scancode
 	
 	elif event.unicode == ' ':
-		if menu_sel <> -1:
-			menu_choice()
-			menu_sel = -1
+		confirm_choice()
 		wordright()
 
 	elif event.key == pygame.K_RETURN:
+		confirm_choice()
 		wordy+=1
 		wordx=0
 		cursorx=0
@@ -430,6 +480,12 @@ pygame.time.set_timer(pygame.USEREVENT, 40)#SIGINT timer
 
 
 
+def bye():
+	open("code.json", "w").write(simplejson.dumps(code))
+	exit()
+
+
+
 
 
 while 1:
@@ -454,12 +510,6 @@ while 1:
 
 
 """
-todo:
-
-pixel position of wordy is wordy * fonth
-
-on drawing:
-	draw menu:
-		from pixel y of wordy down:
+#todo: synonyma, struktury, #word
 
 """			
