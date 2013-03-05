@@ -3,14 +3,108 @@
 
 
 
+
 #hello and welcome
 
 
 
-import os, sys
+import ply.yacc as yacc
+from ply.lex import LexToken
 import pygame
-from pygame import gfxdraw
-import simplejson
+import simplejson #save/restore
+
+
+class Token(LexToken):
+	def __init__(self, type, value):
+		self.type = type
+		self.value = value
+
+
+def yield_code(code):
+	for line in code:
+		for item in line:
+			yield Token(item[1], item[0])
+		yield Token("newline", "banana")
+	yield None
+
+
+
+
+def parse_code(code):
+	code_yielder = yield_code(code)
+	print parser.parse(tokenfunc=code_yielder.next,lexer=3)
+
+
+
+
+
+def p_expression_plus(p):
+	'expression : expression plus term'
+	p[0] = p[1] + p[3]
+
+def p_expression_minus(p):
+	'expression : expression minus term'
+	p[0] = p[1] - p[3]
+
+def p_expression_term(p):
+	'expression : term'
+	p[0] = p[1]
+
+def p_term_times(p):
+	'term : term times factor'
+	p[0] = p[1] * p[3]
+
+def p_term_div(p):
+	'term : term divide factor'
+	p[0] = p[1] / p[3]
+
+def p_term_factor(p):
+	'term : factor'
+	p[0] = p[1]
+
+def p_factor_num(p):
+	'factor : number'
+	p[0] = p[1]
+
+def p_factor_expr(p):
+	'factor : left_parenthesis expression right_parenthesis'
+	p[0] = p[2]
+
+def p_error(p):
+	print "Syntax error in input!"
+
+def p_statement(p):
+	"""statement    : kind_declaration
+			| thing_declaration
+			| expression
+			| statement newlines statement"""
+	p[0] = p[1]
+
+def p_newline_eater(p):
+	"""newlines     : newline newline
+			| newline"""
+
+class KindDeclaration:
+	pass
+
+class ThingDeclaration:
+	pass
+
+def p_kind_declaration(p):
+	'kind_declaration : something_new is_a_kind_of kind'
+	p[0] = KindDeclaration()
+	p[0].parent = p[3]
+	p[0].child = p[1]
+
+def p_thing_declaration(p):
+	'thing_declaration : something_new is kind'
+	p[0] = ThingDeclaration()
+	p[0].kind = p[3]
+	p[0].name = p[1]
+
+
+
+tokens = ['newline', 'something_new', 'is', 'kind', 'is_a_kind_of']
 
 
 
@@ -60,24 +154,31 @@ def init_font():
 try:
 	code = simplejson.loads(open("code.json", "r").read())
 except:
-	code = [[["ring ring ring ring ring ring ring BANANAPHONE!","nonsense"]]]
+	code = [[[3,"number"],["+", "plus"],[3, "number"]]]
 
 
 
 
-
+#cursor position in the current word
 cursorx = 0
+#the current word on line
 wordx = 0
+#line
 wordy = 0
 
 
+
+
+
+#the red menu
 menu = []
+#selected item. -1 for none
 menu_sel = 0
 
 
-#hardcoded -> dictionary -> menu
 
 #the static part of the menu, more stuff gets added by parsing the program
+#it goes hardcoded -> dictionary -> menu
 hardcoded = [[a,a] for a in ["is a kind of","is"]]
 hardcoded +=[["a", "particle"],["an","particle"],["thing","kind"]]
 
@@ -90,40 +191,52 @@ environment = {
 
 hardcoded += [["when", "when"]]+ [[i,"rule"] for i,j in environment["rules"].items()]
 
+somethings = [['+', 'plus'],['-','minus'],['*','times'],['/','divide'],['(','left_parenthesis'],['(','right_parenthesis']]
+hardcoded +=  [[i[0],i[0]] for i in somethings]
+tokens +=  [i[1] for i in somethings]
+tokens += ['number']
+print tokens
+
 print "dict is", hardcoded
 dictionary = hardcoded[:]
+
+
 
 patterns={
 "kind declaration": ["something new", "is a kind of", "kind"],
 "object declaration": ["something new", "is", "particle", "kind"],
-"rule": ["when", "rule", 
+#"rule": ["when", "rule", 
 }
 
-#command, print, expression
 
 
-def matches(code, pattern):
-	if len(code) <> len(pattern):
-		return False
-	print "matching ",code," with ",pattern
-	for counter, i in enumerate(pattern):
-		if code[counter][1] <> i:
-			return False
-	print "yep"
-	return True
+
+
+parser = yacc.yacc()
+
+
+
+
 
 def parse():
-	for line in code:
-		if matches(line, patterns["kind declaration"]):
-			dictionary.append([line[0][0], "kind"])
-		if matches(line, patterns["object declaration"]):
-			dictionary.append([line[0][0], line[3][0]])
+	parse_code(code)
+
+
+
+
+
+#	for line in code:
+#		if matches(line, patterns["kind declaration"]):
+#			dictionary.append([line[0][0], "kind"])
+#		if matches(line, patterns["object declaration"]):
+#			dictionary.append([line[0][0], line[3][0]])
 
 
 def update_dictionary():
 	global dictionary
 	dictionary = hardcoded[:]
 	parse()
+
 	print "dictionary is ", dictionary
 
 def update_menu():
