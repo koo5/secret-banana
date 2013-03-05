@@ -1,0 +1,31 @@
+lepl & lepl3:
+
+from lepl import *
+import lepl
+
+Bin=OneOrMore(Any("012"))
+DotDividedBin = Or(Bin, And(Bin,".",Bin))
+parser = Literal("#b") & OneOrMore(DotDividedBin)
+parser.parse("#b012.1111")
+
+Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+  File "/usr/lib/python3/dist-packages/lepl/core/config.py", line 858, in parse
+    return self.get_parse()(input_, **kargs)
+  File "/usr/lib/python3/dist-packages/lepl/core/parser.py", line 257, in single
+    return next(raw(arg, **kargs))[0]
+  File "/usr/lib/python3/dist-packages/lepl/core/parser.py", line 167, in trampoline
+    value = stack[-1].generator.send(value)
+  File "/usr/lib/python3/dist-packages/lepl/stream/maxdepth.py", line 57, in _matcher
+    raise FullFirstMatchException(stream2)
+lepl.stream.maxdepth.FullFirstMatchException: The match failed in <string> at '1111' (line 1, character 7).
+
+
+
+yaps - too simple
+pyparsing - error
+parcon - wtf?????????
+modgrammar - bug
+rp - ?
+yeanpypa - weird
+pypeg, simpleparse - not for natural language
