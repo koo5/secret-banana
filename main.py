@@ -15,17 +15,18 @@ import simplejson #save/restore
 
 
 class Token(LexToken):
-	def __init__(self, type, value):
+	def __init__(self, type, value, line):
 		self.type = type
 		self.value = value
+		self.line = line
 
 
 def yield_code(code):
 	for line in code:
-		for item in line:
+		for i, item in enumerate(line):
 			if item[1] <> None: 
-				yield Token(item[1], item[0])
-		yield Token("newline", "banana")
+				yield Token(item[1], item[0], i)
+		yield Token("newline", "banana", i)
 	yield None
 
 
