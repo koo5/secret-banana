@@ -23,7 +23,8 @@ class Token(LexToken):
 def yield_code(code):
 	for line in code:
 		for item in line:
-			yield Token(item[1], item[0])
+			if item[1] <> None: 
+				yield Token(item[1], item[0])
 		yield Token("newline", "banana")
 	yield None
 
@@ -31,6 +32,7 @@ def yield_code(code):
 
 
 def parse_code(code):
+	print "code:",code
 	code_yielder = yield_code(code)
 	print parser.parse(tokenfunc=code_yielder.next,lexer=3)
 
@@ -110,73 +112,6 @@ tokens = ['newline', 'something_new', 'is', 'kind', 'is_a_kind_of']
 
 
 
-#margin between displayed text and left edge of the window
-left_margin = 10
-screen_height = 480
-
-
-
-
-
-
-
-def init_window():
-	pygame.init()
-	pygame.display.set_caption("secret-banana")
-	#sdl, which pygame is based on, has its own keyboard delay and repeat rate
-	pygame.key.set_repeat(300,30)
-	#this creates a window
-	return pygame.display.set_mode((640,screen_height))
-
-screen_surface = init_window()
-
-
-
-
-
-def init_font():
-	#the final version is planned to use comic sans ✈
-	font = pygame.font.SysFont('monospace', 16)
-	f= font.render(" ",False,(0,0,0)).get_rect()
-	fonth = f.height
-	fontw = f.width
-	return font, fontw, fonth
-
-(font, fontw, fonth) = init_font()
-
-
-
-
-
-
-
-
-try:
-	code = simplejson.loads(open("code.json", "r").read())
-except:
-	code = [[[3,"number"],["+", "plus"],[3, "number"]]]
-
-
-
-
-#cursor position in the current word
-cursorx = 0
-#the current word on line
-wordx = 0
-#line
-wordy = 0
-
-
-
-
-
-#the red menu
-menu = []
-#selected item. -1 for none
-menu_sel = 0
-
-
-
 #the static part of the menu, more stuff gets added by parsing the program
 #it goes hardcoded -> dictionary -> menu
 hardcoded = [[a,a] for a in ["is a kind of","is"]]
@@ -230,6 +165,7 @@ def parse():
 #			dictionary.append([line[0][0], "kind"])
 #		if matches(line, patterns["object declaration"]):
 #			dictionary.append([line[0][0], line[3][0]])
+
 
 
 def update_dictionary():
@@ -510,16 +446,18 @@ def control(event):
 		wordright()
 
 	elif event.key == pygame.K_RETURN:
-		confirm_choice()
-		wordy+=1
-		wordx=0
-		cursorx=0
-		code.insert(wordy, [])
-		snap_to_line()
-		stretch_line()
+		if pygame.key.get_mods() & pygame.KMOD_RCTRL:
+			parse()
+		else:
+			confirm_choice()
+			wordy+=1
+			wordx=0
+			cursorx=0
+			code.insert(wordy, [])
+			snap_to_line()
+			stretch_line()
 
-	
-	else: return False			
+	else: return False		
 
 	update_menu()
 	return True
@@ -539,10 +477,13 @@ def edit(event):
 			if wordx > 0:
 				#print ">0"
 				#print code[wordy][wordx-1]
-				if code[wordy][wordx]==["",None]:
+				if code[wordy][wordx][0]=="":
 					#print "del"
 					del code[wordy][wordx]
 					moveleft()
+			else:
+				if wordy > 0:
+					if code[wordy-1][len(code[wordy-1]-1)]
 
 	elif event.key==pygame.K_DELETE:
 		if cursorx >= 0 and cursorx < len(get_text()):
@@ -559,11 +500,97 @@ def edit(event):
 
 
 
+def mouse_me_baby(event):
+	global menu_sel
+	print event
+	if event.button == 4: #up
+		menu_sel -= 1
+	if event.button == 5: #down
+		menu_sel += 1
+
+
+
+
+
 def process_event(event):
 	if event.type == pygame.QUIT:
 		bye()
 	if event.type == pygame.KEYDOWN:
 		control(event) or edit(event)
+	if event.type == pygame.MOUSEBUTTONDOWN:
+		mouse_me_baby(event)
+
+
+
+
+
+
+
+
+#margin between displayed text and left edge of the window
+left_margin = 10
+screen_height = 480
+
+
+
+
+
+
+
+def init_window():
+	pygame.init()
+	pygame.display.set_caption("secret-banana")
+	#sdl, which pygame is based on, has its own keyboard delay and repeat rate
+	pygame.key.set_repeat(300,30)
+	#this creates a window
+	return pygame.display.set_mode((640,screen_height))
+
+screen_surface = init_window()
+
+
+
+
+
+def init_font():
+	#the final version is planned to use comic sans ✈
+	font = pygame.font.SysFont('monospace', 16)
+	f= font.render(" ",False,(0,0,0)).get_rect()
+	fonth = f.height
+	fontw = f.width
+	return font, fontw, fonth
+
+(font, fontw, fonth) = init_font()
+
+
+
+
+
+
+
+
+try:
+	code = simplejson.loads(open("code.json", "r").read())
+except:
+	code = [[[3,"number"],["+", "plus"],[3, "number"]]]
+
+
+
+
+#cursor position in the current word
+cursorx = 0
+#the current word on line
+wordx = 0
+#line
+wordy = 0
+
+
+
+
+
+#the red menu
+menu = []
+#selected item. -1 for none
+menu_sel = 0
 
 
 
