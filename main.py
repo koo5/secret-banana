@@ -105,12 +105,39 @@ def p_thing_declaration(p):
 	p[0].kind = p[3]
 	p[0].name = p[1]
 
+def p_array_declaration(p):
+	'array_declaration      : something_new is_an_array
+				|something_new is_an_array of kind'
 
 
 tokens = ['newline', 'something_new', 'is', 'kind', 'is_a_kind_of']
 
 
 
+class BananaArray():
+	def __init__(self):
+		self.array = []
+
+
+#program interpreter environment
+environment = {
+	"rules":
+	{	
+		"program begins": [],
+		"program ends": []
+	}
+	"variables":
+	{
+		"banana color" : "yellow"
+	}
+}
+
+
+
+def interpret(ast):
+	for x in ast:
+		if type(x) is ThingDeclaration:
+			if x.kind == "array"
 
 
 #the static part of the menu, more stuff gets added by parsing the program
@@ -118,12 +145,6 @@ tokens = ['newline', 'something_new', 'is', 'kind', 'is_a_kind_of']
 hardcoded = [[a,a] for a in ["is a kind of","is"]]
 hardcoded +=[["a", "particle"],["an","particle"],["thing","kind"]]
 
-#program interpreter environment
-environment = {
-	"rules": {	"program begins": [],
-			"program ends": []
-	}
-}
 
 hardcoded += [["when", "when"]]+ [[i,"rule"] for i,j in environment["rules"].items()]
 
@@ -219,40 +240,52 @@ def confirm_choice():
 def initiate_new_word():
 	menu_sel = 0
 
+
+def create_cell(y,x):
+	while wordy >= len(code):
+		code.append([])
+	while wordx >= len(code[y]):
+		code[y].insert([])
+
+
 def set_meaning(x):
+	global code
+	create_cell(wordy, wordx)
 	code[wordy][wordx][1] = x
 	print "meaning set to", x
 
+
 def set_text(w):
 	global code
+	create_cell(wordy, wordx)
 	code[wordy][wordx][0] = w
 
+
 def get_text():
-	return code[wordy][wordx][0]
+	if (wordy < len(code)) and wordx < len(code[wordy]):
+		return code[wordy][wordx][0]
+	else
+		return ""
 
 
 
 
-
-
-
-
-
+def get_line_len(y):
+	if len(code) > y:
+		return len(code[y])
+	else:
+		return 0
 
 
 
 #moving about
 
-def stretch_line():
-	if len(code[wordy]) == wordx:
-		code[wordy].append(["",None])
 
 def snap_to_line():
 	#if number_of_letters_on_line(wordy) < number_of_letters_on_previous_line...
 	global wordx, cursorx
 	#if wordx > len(code[wordy])
-	wordx = min(len(code[wordy]), wordx)
-	#
+	#wordx = min(get_line_len(wordy), wordx)
 	cursorx=wordx=0
 
 def moveup():
@@ -267,8 +300,7 @@ def movedown():
 	if wordy >= len(code):
 		code.append([])
 	#k
-	snap_to_line()		
-	stretch_line()
+	snap_to_line()
 
 
 def moveright():
@@ -484,7 +516,7 @@ def edit(event):
 					moveleft()
 			else:
 				if wordy > 0:
-					if code[wordy-1][len(code[wordy-1]-1)]
+					if code[wordy-1][len(code[wordy-1]-1)]:
 
 	elif event.key==pygame.K_DELETE:
 		if cursorx >= 0 and cursorx < len(get_text()):
