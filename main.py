@@ -107,7 +107,59 @@ def p_thing_declaration(p):
 
 def p_array_declaration(p):
 	'array_declaration      : something_new is_an_array
-				|something_new is_an_array of kind'
+				| something_new is_an_array of kind'
+
+
+def p_integer_declaration(p):
+	'integer_declaration	: something_new is_an_integer
+				| something_new is_an_integer in_range number-number
+				| something_new is_an_integer between number and number'
+
+
+def p_open_file_statement(p):
+	'open_file_statement	: open path_to_file
+				| open path_to_file as file_handle'
+
+
+class BananaTable():
+	pass
+
+class BananaTableColumn():
+	pass
+
+def p_table_column(p):
+	'table_column: name - type'
+	p[0] = BananaTableColumn()
+	p[0].name = p[1]
+	p[0].type = p[3]
+
+def p_table_column2(p):
+	'table_column2: name ( type )'
+	p[0] = BananaTableColumn()
+	p[0].name = p[1]
+	p[0].type = p[3]
+
+def p_table_name(p):
+	'table_name	: table of something_new'
+	p[0] = p[3]
+
+def p_table_columns(p):
+	'table_columns  : table_columns table_column
+			|table_columns table_column2
+			|table_column 
+			|table_column2'
+
+def p_table_heading(p):
+	'table_heading	: table_columns'
+	p[0] = BananaTable()
+	p[0].name = p[3]
+
+
+def p_table_declaration(p):
+	'table_declaration	: table_heading newline table_data'
+	p[0] = BananaTable()
+	p[0].name = p[3]
+
 
 
 tokens = ['newline', 'something_new', 'is', 'kind', 'is_a_kind_of']
@@ -683,6 +735,10 @@ while 1:
 
 
 """
-#todo: synonyma, struktury, #word
+#todo:
+if key.unicode == '\':
+	cursor left
+	add newline
+	cursor up
 
 """			
