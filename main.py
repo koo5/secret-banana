@@ -1,5 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 #-*- coding: utf-8 -*-
+
 
 
 
@@ -7,11 +8,9 @@
 
 
 
-import os, sys
-import pygame
-from pygame import gfxdraw
-import simplejson
 
+import pygame
+import simplejson
 
 
 
@@ -75,31 +74,43 @@ menu = []
 menu_sel = 0
 
 
+
+
+
+#program interpreter environment
+environment = {
+	"rules":
+	{
+		"program begins": [],
+		"program ends": []
+	},
+	"variables":
+	{
+		"banana color" : "yellow"
+	}
+}
+
+
+
+
 #hardcoded -> dictionary -> menu
 
 #the static part of the menu, more stuff gets added by parsing the program
 hardcoded = [[a,a] for a in ["is a kind of","is"]]
 hardcoded +=[["a", "particle"],["an","particle"],["thing","kind"]]
-
-#program interpreter environment
-environment = {
-	"rules": {	"program begins": [],
-			"program ends": []
-	}
-}
-
 hardcoded += [["when", "when"]]+ [[i,"rule"] for i,j in environment["rules"].items()]
+somethings = [['+', 'plus'],['-','minus'],['*','times'],['/','divide'],['(','left_parenthesis'],['(','right_parenthesis']]
+hardcoded +=  [[i[0],i[0]] for i in somethings]
 
 print "dict is", hardcoded
 dictionary = hardcoded[:]
 
+
 patterns={
 "kind declaration": ["something new", "is a kind of", "kind"],
 "object declaration": ["something new", "is", "particle", "kind"],
-"rule": ["when", "rule", 
-}
+}#bleh, we will need a real parser instead of this!
 
-#command, print, expression
 
 
 def matches(code, pattern):
